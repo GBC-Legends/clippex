@@ -1,8 +1,5 @@
 <resources>
     <string name="app_name">Clippex</string>
     <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
     <string name="title_gallery">Gallery</string>
-    <string name="title_saved">Saved</string>
 </resources>

@@ -16,4 +16,10 @@
         android:name="com.example.clippex.ui.gallery.GalleryFragment"
         android:label="@string/title_gallery"
         tools:layout="@layout/fragment_gallery" />
+
+    <fragment
+        android:id="@+id/navigation_download"
+        android:name="com.example.clippex.ui.download.DownloadFragment"
+        android:label="@string/title_download"
+        tools:layout="@layout/fragment_download" />
 </navigation>

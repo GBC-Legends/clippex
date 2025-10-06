@@ -47,7 +47,7 @@ class GalleryFragment : Fragment() {
 @Composable
 fun GalleryScreen() {
     val mainText = stringResource(R.string.gallery_main_text)
-    val sampleFiles = generateFiles();
+    val sampleFiles = generateFiles()
 
 
     LazyColumn (
@@ -99,7 +99,7 @@ fun generateFiles(): List<String> {
         "settings1.yaml", "config1.ini", "build1.gradle", "index1.html", "style1.css"
     )
 
-    return files.shuffled();
+    return files.shuffled()
 }
 
 

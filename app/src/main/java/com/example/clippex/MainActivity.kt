@@ -1,7 +1,6 @@
 package com.example.clippex
 
 import android.os.Bundle
-import android.widget.TextView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
@@ -15,8 +14,11 @@ class MainActivity : AppCompatActivity() {
       init {
          System.loadLibrary("clippex")
       }
-      external fun add(a: Int, b: Int): Int
     }
+
+    external fun add(a: Int, b: Int): Int
+
+    external fun runThreads()
 
     private lateinit var binding: ActivityMainBinding
 
@@ -42,8 +44,11 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-        val textView = findViewById<TextView>(R.id.app_name_text)
-        textView.text = add(1, 2).toString()
+//        val textView = findViewById<TextView>(R.id.app_name_text)
+//        textView.text = add(4, 2).toString()
+
+        runThreads()
+        add(4, 5665)
     }
 
     // go back button

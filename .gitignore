@@ -15,3 +15,6 @@
 local.properties
 .idea/
 /.kotlin/
+/app/src/main/rust/target/*
+/app/src/main/rust/Cargo.lock
+/app/src/main/jniLibs/*

@@ -1,0 +1,8 @@
+package com.example.clippex.core.links
+
+import java.io.File
+
+sealed class DownloadResult {
+    data class Success(val file: File, val mimeType: String) : DownloadResult()
+    data class Failure(val errorMessage: String, val exception: Exception? = null) : DownloadResult()
+}

@@ -26,7 +26,8 @@
                 android:text="@string/app_name"
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
-                android:textSize="18sp"
+                android:textSize="32sp"
+                android:fontFamily="@font/atma_semibold"
                 android:layout_gravity="end|center_vertical"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"/>
@@ -40,7 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="0dp"
         android:layout_marginEnd="0dp"
-        android:background="@color/gray"
+        android:background="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -57,7 +58,4 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/mobile_navigation" />
-
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>

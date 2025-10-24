@@ -22,6 +22,7 @@ class XLinkProcessor : LinkProcessor {
             val connection = apiUrl.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            connection.setRequestProperty("Accept", "application/json")
             connection.doOutput = true
 
             connection.outputStream.bufferedWriter().use {
@@ -30,7 +31,9 @@ class XLinkProcessor : LinkProcessor {
             }
 
             if (connection.responseCode !in 200..299) {
-                return@withContext DownloadResult.Failure("Backend error: ${connection.responseCode}")
+                return@withContext Failure(
+                    "Backend API error: ${connection.responseCode} ${connection.responseMessage}"
+                )
             }
 
             val response = connection.inputStream.bufferedReader().use { it.readText() }
@@ -42,7 +45,7 @@ class XLinkProcessor : LinkProcessor {
             return@withContext downloadFile(context, directUrl, fileName, mimeType)
         } catch (e: Exception) {
             e.printStackTrace()
-            return@withContext DownloadResult.Failure("X download failed: ${e.message}", e)
+            return@withContext Failure("X (twitter) processing failed: ${e.message}", e)
         }
     }
 }

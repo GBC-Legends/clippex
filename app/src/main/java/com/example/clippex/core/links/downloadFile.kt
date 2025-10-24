@@ -21,8 +21,8 @@ suspend fun downloadFile(
         connection.connect()
 
         if (connection.responseCode !in 200..299) {
-            return@withContext DownloadResult.Failure(
-                "Download error: ${connection.responseCode} ${connection.responseMessage}"
+            return@withContext Failure(
+                "Backend API error: ${connection.responseCode} ${connection.responseMessage}"
             )
         }
 
@@ -39,10 +39,9 @@ suspend fun downloadFile(
                 input.copyTo(output)
             }
         }
-
-        DownloadResult.Success(outputFile, mimeType)
+        Success(outputFile, mimeType)
     } catch (e: Exception) {
         e.printStackTrace()
-        DownloadResult.Failure("Download failed: ${e.message}", e)
+        return@withContext Failure("Generic processing failed: ${e.message}", e)
     }
 }

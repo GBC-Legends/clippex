@@ -20,12 +20,12 @@ class YouTubeLinkProcessor : LinkProcessor {
             try {
                 val payload = JSONObject().apply { put("url", url) }.toString()
 
-                val apiUrl = URL(API_ENDPOINT)
-                val connection = apiUrl.openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                connection.setRequestProperty("Accept", "application/json")
-                connection.doOutput = true
+                val connection = (URL(API_ENDPOINT).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Accept", "application/json")
+                    doOutput = true
+                }
 
                 connection.outputStream.bufferedWriter().use {
                     it.write(payload)
@@ -33,7 +33,7 @@ class YouTubeLinkProcessor : LinkProcessor {
                 }
 
                 if (connection.responseCode !in 200..299) {
-                    return@withContext DownloadResult.Failure(
+                    return@withContext Failure(
                         "Backend API error: ${connection.responseCode} ${connection.responseMessage}"
                     )
                 }
@@ -49,7 +49,7 @@ class YouTubeLinkProcessor : LinkProcessor {
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                return@withContext DownloadResult.Failure("YouTube processing failed: ${e.message}", e)
+                return@withContext Failure("YouTube processing failed: ${e.message}", e)
             }
         }
 }

@@ -62,6 +62,7 @@ class DownloadFragment : Fragment() {
             // show file info
             fileNameLabel.text = "File Name: $name"
             fileTypeLabel.text = "File Type: $extension"
+            renameInput.setText(name)
         }
 
         btnDownload.setOnClickListener {

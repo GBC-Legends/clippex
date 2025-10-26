@@ -48,8 +48,7 @@ suspend fun downloadFile(
             DownloadedFile(
                 fileName = fileName,
                 filePath = outputFile.absolutePath,
-                mimeType = mimeType,
-                fileUrl = fileUrl
+                mimeType = mimeType
             )
         )
 

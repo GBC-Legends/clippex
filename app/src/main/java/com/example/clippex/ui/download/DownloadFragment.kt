@@ -118,8 +118,7 @@ class DownloadFragment : Fragment() {
                     DownloadedFile(
                         fileName = fileName,
                         filePath = file.absolutePath,
-                        mimeType = mimeType,
-                        fileUrl = url
+                        mimeType = mimeType
                     )
                 )
 

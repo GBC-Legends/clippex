@@ -1,5 +1,6 @@
 package com.example.clippex.ui.gallery
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -94,13 +95,15 @@ fun GalleryScreen() {
                                 .show()
                         }
                     },
-                    /* TODO: saving to the device's storage */
-                    onSave = {
-                        Toast.makeText(
-                            context,
-                            "Saved ${file.fileName} to device",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    onSave = { // opens the file manager - give permission to the "clippex" folder inside "Download"
+                        try {
+                            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Can't open file manager.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 )
             }
@@ -140,7 +143,7 @@ fun FileRow(
         }
 
         Row {
-            // saving
+            // opening the folder
             OutlinedButton(
                 onClick = onSave,
                 modifier = Modifier.height(36.dp),
@@ -149,9 +152,9 @@ fun FileRow(
                     contentColor = Color.White
                 )
             ) {
-                Icon(Icons.Default.Download, contentDescription = null)
+                Icon(Icons.Default.Folder, contentDescription = null)
                 Spacer(Modifier.width(4.dp))
-                Text("Save")
+                Text("Open")
             }
 
             Spacer(Modifier.width(8.dp))

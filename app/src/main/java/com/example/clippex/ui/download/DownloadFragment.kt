@@ -1,11 +1,15 @@
 package com.example.clippex.ui.download
 
+import android.content.ContentValues
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.clippex.R
@@ -14,8 +18,10 @@ import com.example.clippex.core.database.DownloadedFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
+import java.io.BufferedInputStream
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
 
 class DownloadFragment : Fragment() {
     private lateinit var fileNameLabel: TextView
@@ -32,6 +38,7 @@ class DownloadFragment : Fragment() {
         fileUrl = arguments?.getString("fileUrl")
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -46,7 +53,6 @@ class DownloadFragment : Fragment() {
         progressBar = view.findViewById(R.id.progressBar)
         progressText = view.findViewById(R.id.progressText)
 
-        // ---------------- TEST ----------------
         if (fileUrl == null) {
             fileNameLabel.text = "Invalid link"
             btnDownload.isEnabled = false
@@ -64,14 +70,15 @@ class DownloadFragment : Fragment() {
         return view
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun startDownload() {
-        val url = fileUrl ?: return
+        val urlString = fileUrl ?: return
         val context = requireContext()
 
         val fileName = if (renameInput.text.isNotBlank()) {
             renameInput.text.toString()
         } else {
-            url.substringAfterLast('/', "downloaded_file.txt")
+            urlString.substringAfterLast('/', "downloaded_file.txt")
         }
 
         val extension = fileName.substringAfterLast('.', "txt")
@@ -85,39 +92,54 @@ class DownloadFragment : Fragment() {
             else -> "application/octet-stream"
         }
 
-        lifecycleScope.launch {
-            progressText.text = "Downloading..."
-
-            // progress bar test
-            for (i in 1..100 step 10) {
-                progressBar.progress = i
-                progressText.text = "Downloading... $i%"
-                kotlinx.coroutines.delay(50)
-            }
-
-            // saving files to the device
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // creating /Download/clippex/ directory
-                val clippexDir = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    "clippex"
-                )
-                if (!clippexDir.exists()) {
-                    clippexDir.mkdirs()
+                val url = URL(urlString)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.connect()
+
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                    throw IOException("Error ${connection.responseCode}")
                 }
 
-                // test file
-                val file = File(clippexDir, fileName)
-                FileOutputStream(file).use { out ->
-                    out.write("This is a test file saved from Clippex.\nURL: $url".toByteArray())
+                val totalSize = connection.contentLength
+                val input = BufferedInputStream(connection.inputStream)
+                val resolver = context.contentResolver
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Clippex")
+                }
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: throw IOException("Failed to create file")
+
+                resolver.openOutputStream(uri)?.use { output ->
+                    val buffer = ByteArray(4096)
+                    var bytesRead: Int
+                    var downloaded = 0L
+
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        downloaded += bytesRead
+                        if (totalSize > 0) {
+                            val progress = (downloaded * 100 / totalSize).toInt()
+                            withContext(Dispatchers.Main) {
+                                progressBar.progress = progress
+                                progressText.text = "Downloading... $progress%"
+                            }
+                        }
+                    }
                 }
 
-                // save to the database
+                input.close()
+                connection.disconnect()
+
+                // saving to the database
                 val db = AppDatabase.getDatabase(context)
                 db.downloadedFileDao().insert(
                     DownloadedFile(
                         fileName = fileName,
-                        filePath = file.absolutePath,
+                        filePath = uri.toString(),
                         mimeType = mimeType
                     )
                 )
@@ -125,16 +147,13 @@ class DownloadFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     progressBar.progress = 100
                     progressText.text = "Download Complete"
-                    Toast.makeText(context, "Saved to: ${file.absolutePath}", Toast.LENGTH_LONG)
-                        .show()
-                    btnDownload.isEnabled = true
+                    Toast.makeText(context, "File saved to Downloads/Clippex", Toast.LENGTH_LONG).show()
                 }
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     progressText.text = "Download Failed"
                     Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                    btnDownload.isEnabled = true
                 }
             }
         }

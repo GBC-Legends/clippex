@@ -1,5 +1,7 @@
 package com.example.clippex.core.links
 
+import com.example.clippex.core.database.AppDatabase
+import com.example.clippex.core.database.DownloadedFile
 import android.content.Context
 import android.os.Environment
 import kotlinx.coroutines.Dispatchers
@@ -11,9 +13,9 @@ import java.net.URL
 
 suspend fun downloadFile(
     context: Context,
-    fileUrl: String,
     fileName: String,
-    mimeType: String
+    mimeType: String,
+    fileUrl: String
 ): DownloadResult = withContext(Dispatchers.IO) {
     try {
         val connection = URL(fileUrl).openConnection() as HttpURLConnection
@@ -39,6 +41,18 @@ suspend fun downloadFile(
                 input.copyTo(output)
             }
         }
+
+        // database
+        val db = AppDatabase.getDatabase(context)
+        db.downloadedFileDao().insert(
+            DownloadedFile(
+                fileName = fileName,
+                filePath = outputFile.absolutePath,
+                mimeType = mimeType,
+                fileUrl = fileUrl
+            )
+        )
+
         Success(outputFile, mimeType)
     } catch (e: Exception) {
         e.printStackTrace()

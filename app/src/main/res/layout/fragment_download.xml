@@ -113,15 +113,14 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textView"
-
-            android:progress="65" />
+            android:progress="0" />
 
         <TextView
             android:id="@+id/progressText"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:text="65%"
+            android:text="0%"
             android:textSize="15sp"
             tools:ignore="SmallSp" />
 

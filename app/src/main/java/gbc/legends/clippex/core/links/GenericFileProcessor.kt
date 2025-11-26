@@ -1,4 +1,4 @@
-package com.example.clippex.core.links
+package gbc.legends.clippex.core.links
 
 import android.content.Context
 import android.os.Environment
@@ -11,6 +11,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class GenericFileProcessor : LinkProcessor {
+
+//    protected getDownloadPath() {
+//
+//    }
 
     override fun canProcess(url: String): Boolean = true
 

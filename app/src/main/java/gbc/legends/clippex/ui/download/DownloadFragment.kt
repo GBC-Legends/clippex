@@ -1,4 +1,4 @@
-package com.example.clippex.ui.download
+package gbc.legends.clippex.ui.download
 
 import android.content.ContentValues
 import android.os.Build
@@ -12,9 +12,9 @@ import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.example.clippex.R
-import com.example.clippex.core.database.AppDatabase
-import com.example.clippex.core.database.DownloadedFile
+import gbc.legends.clippex.R
+import gbc.legends.clippex.core.database.AppDatabase
+import gbc.legends.clippex.core.database.DownloadedFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

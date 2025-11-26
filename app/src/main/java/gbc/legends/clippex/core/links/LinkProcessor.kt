@@ -1,4 +1,4 @@
-package com.example.clippex.core.links
+package gbc.legends.clippex.core.links
 
 import android.content.Context
 

@@ -1,4 +1,4 @@
-package com.example.clippex.core.links
+package gbc.legends.clippex.core.links
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
@@ -7,12 +7,12 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-class TikTokLinkProcessor : LinkProcessor {
-    private val tiktokRegex = Regex("(?:https?://)?(?:www\\.)?tiktok\\.com/[^\\s]+")
+class XLinkProcessor : LinkProcessor {
+    private val xRegex = Regex("(?:https?://)?(?:www\\.)?(twitter\\.com|x\\.com)/[^\\s]+")
 
     private val API_ENDPOINT = ""
 
-    override fun canProcess(url: String): Boolean = tiktokRegex.matches(url)
+    override fun canProcess(url: String): Boolean = xRegex.matches(url)
 
     override suspend fun processLink(context: Context, url: String): DownloadResult = withContext(Dispatchers.IO) {
         try {
@@ -43,9 +43,9 @@ class TikTokLinkProcessor : LinkProcessor {
             val mimeType = json.getString("mimeType")
 
             return@withContext downloadFile(context, directUrl, fileName, mimeType)
-        }  catch (e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
-            return@withContext Failure("TikTok processing failed: ${e.message}", e)
+            return@withContext Failure("X (twitter) processing failed: ${e.message}", e)
         }
     }
 }

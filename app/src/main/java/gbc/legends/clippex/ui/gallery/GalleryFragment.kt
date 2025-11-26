@@ -1,4 +1,4 @@
-package com.example.clippex.ui.gallery
+package gbc.legends.clippex.ui.gallery
 
 import android.content.Intent
 import android.os.Bundle
@@ -25,9 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
-import com.example.clippex.R
-import com.example.clippex.core.database.AppDatabase
-import com.example.clippex.core.database.DownloadedFile
+import gbc.legends.clippex.core.database.AppDatabase
+import gbc.legends.clippex.core.database.DownloadedFile
+import gbc.legends.clippex.R
 import kotlinx.coroutines.launch
 
 class GalleryFragment : Fragment() {

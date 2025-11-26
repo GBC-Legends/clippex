@@ -1,4 +1,4 @@
-package com.example.clippex.core.links
+package gbc.legends.clippex.core.links
 
 object LinkProcessorFactory {
     private val processors = listOf(

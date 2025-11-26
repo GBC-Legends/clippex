@@ -1,4 +1,4 @@
-package com.example.clippex.core.database
+package gbc.legends.clippex.core.database
 
 import androidx.room.Dao
 import androidx.room.Delete

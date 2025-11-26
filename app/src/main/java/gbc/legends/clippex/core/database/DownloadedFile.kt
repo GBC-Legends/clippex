@@ -1,4 +1,4 @@
-package com.example.clippex.core.database
+package gbc.legends.clippex.core.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

@@ -1,7 +1,7 @@
-package com.example.clippex.core.links
+package gbc.legends.clippex.core.links
 
-import com.example.clippex.core.database.AppDatabase
-import com.example.clippex.core.database.DownloadedFile
+import gbc.legends.clippex.core.database.AppDatabase
+import gbc.legends.clippex.core.database.DownloadedFile
 import android.content.Context
 import android.os.Environment
 import kotlinx.coroutines.Dispatchers

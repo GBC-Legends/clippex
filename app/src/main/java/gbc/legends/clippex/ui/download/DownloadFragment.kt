@@ -1,6 +1,7 @@
 package gbc.legends.clippex.ui.download
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -12,6 +13,7 @@ import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import gbc.legends.clippex.MainActivity
 import gbc.legends.clippex.R
 import gbc.legends.clippex.core.api.Failure
 import gbc.legends.clippex.core.api.MediaOption
@@ -26,7 +28,9 @@ import gbc.legends.clippex.core.links.XLinkProcessor
 import gbc.legends.clippex.core.links.YouTubeLinkProcessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.delay
 import kotlinx.coroutines.withContext
 
 
@@ -102,7 +106,7 @@ class DownloadFragment : Fragment() {
 
         var fileName: String
         var mimeType: String
-        var urlString: String = fileUrl ?: return null
+        val urlString: String = fileUrl ?: return null
         Log.d("DownloadFragment", "URL: $urlString")
 
         val linkProcessor = LinkProcessorFactory.getProcessor(urlString)
@@ -129,7 +133,18 @@ class DownloadFragment : Fragment() {
             } else {
                 Log.d("DownloadFragment", "Requesting to clippex api: $urlString")
                 val response = when (val req = linkProcessor.requestToClippexApi(requireContext(), urlString)) {
-                    is Failure -> throw Exception(req.errorMessage, req.exception)
+                    is Failure -> {
+                        withContext(Dispatchers.Main) {
+                            progressText.text = "API failed - ${req.errorMessage}"
+                            Toast.makeText(context, "API error", Toast.LENGTH_LONG).show()
+                        }
+
+                        delay(1000)
+
+                        requireActivity().finish()
+                        startActivity(Intent(requireContext(), MainActivity::class.java))
+                        return@launch
+                    }
                     is Success -> req.response
                 }
                 Log.d("DownloadFragment", "Response: $response")

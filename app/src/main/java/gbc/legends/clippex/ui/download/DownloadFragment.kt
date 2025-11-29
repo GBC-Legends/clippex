@@ -1,10 +1,8 @@
 package gbc.legends.clippex.ui.download
 
-import android.content.ContentValues
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,13 +13,13 @@ import androidx.lifecycle.lifecycleScope
 import gbc.legends.clippex.R
 import gbc.legends.clippex.core.database.AppDatabase
 import gbc.legends.clippex.core.database.DownloadedFile
+import gbc.legends.clippex.core.links.GenericLinkProcessor
+import gbc.legends.clippex.core.links.LinkProcessor
+import gbc.legends.clippex.core.links.LinkProcessorFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.BufferedInputStream
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 
 class DownloadFragment : Fragment() {
     private lateinit var fileNameLabel: TextView
@@ -71,76 +69,44 @@ class DownloadFragment : Fragment() {
         return view
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     private fun startDownload() {
         val urlString = fileUrl ?: return
         val context = requireContext()
 
-        val fileName = if (renameInput.text.isNotBlank()) {
-            renameInput.text.toString()
-        } else {
-            urlString.substringAfterLast('/', "downloaded_file.txt")
-        }
+        val linkProcessor: LinkProcessor = LinkProcessorFactory.getProcessor(urlString);
+        Log.d("DownloadFragment", "Link processor: $linkProcessor")
 
-        val extension = fileName.substringAfterLast('.', "txt")
-        // file types for the database
-        val mimeType = when (extension.lowercase()) {
-            "mp4", "mkv", "avi" -> "video/*"
-            "mp3", "wav" -> "audio/*"
-            "jpg", "png", "jpeg", "gif" -> "image/*"
-            "pdf" -> "application/pdf"
-            "txt", "csv", "md" -> "text/*"
-            else -> "application/octet-stream"
+
+        val progressChannel = Channel<Int>(capacity = Channel.CONFLATED)
+
+        val fileName = linkProcessor.getFilename(renameInput.text.toString(), urlString)
+
+        val mimeType = linkProcessor.getMime(fileName)
+
+
+        progressBar.progress = 0
+        progressText.text = "Starting download..."
+
+        lifecycleScope.launch {
+            for (progress in progressChannel) {
+                progressBar.progress = progress
+                progressText.text = "Downloading... $progress%"
+            }
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val url = URL(urlString)
-                val connection = url.openConnection() as HttpURLConnection
-                connection.connect()
+                val resultUri = linkProcessor._subprocessLink(context, fileName, mimeType, progressChannel)
+                Log.d("DownloadFragment", "Download result: $resultUri")
 
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                    throw IOException("Error ${connection.responseCode}")
-                }
 
-                val totalSize = connection.contentLength
-                val input = BufferedInputStream(connection.inputStream)
-                val resolver = context.contentResolver
-                val values = ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
-                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
-                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Clippex")
-                }
-                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-                    ?: throw IOException("Failed to create file")
-
-                resolver.openOutputStream(uri)?.use { output ->
-                    val buffer = ByteArray(4096)
-                    var bytesRead: Int
-                    var downloaded = 0L
-
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                        downloaded += bytesRead
-                        if (totalSize > 0) {
-                            val progress = (downloaded * 100 / totalSize).toInt()
-                            withContext(Dispatchers.Main) {
-                                progressBar.progress = progress
-                                progressText.text = "Downloading... $progress%"
-                            }
-                        }
-                    }
-                }
-
-                input.close()
-                connection.disconnect()
 
                 // saving to the database
                 val db = AppDatabase.getDatabase(context)
                 db.downloadedFileDao().insert(
                     DownloadedFile(
                         fileName = fileName,
-                        filePath = uri.toString(),
+                        filePath = resultUri.toString(),
                         mimeType = mimeType
                     )
                 )

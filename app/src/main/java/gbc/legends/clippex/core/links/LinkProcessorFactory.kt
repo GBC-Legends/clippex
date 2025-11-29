@@ -1,16 +1,16 @@
 package gbc.legends.clippex.core.links
 
 object LinkProcessorFactory {
-    private val processors = listOf(
-        YouTubeLinkProcessor(),
-        InstagramLinkProcessor(),
-        TikTokLinkProcessor(),
-        XLinkProcessor()
-    )
-
-    private val genericProcessor = GenericFileProcessor()
 
     fun getProcessor(url: String): LinkProcessor {
+        val processors = listOf(
+            YouTubeLinkProcessor(url = url),
+            InstagramLinkProcessor(url=url),
+            TikTokLinkProcessor(url=url),
+            XLinkProcessor(url=url)
+        )
+
+        val genericProcessor = GenericLinkProcessor(url=url)
         return processors.firstOrNull { it.canProcess(url) } ?: genericProcessor
     }
 }

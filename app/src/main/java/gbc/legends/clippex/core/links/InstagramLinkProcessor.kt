@@ -6,7 +6,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.channels.Channel
 
-class InstagramLinkProcessor(url: String) : GenericLinkProcessor(url=url) {
+class InstagramLinkProcessor() : GenericLinkProcessor() {
     private val instagramRegex = Regex(
         pattern = "^(https?://)?(www\\.|m\\.)?instagram\\.com/.*",
         option = RegexOption.IGNORE_CASE
@@ -15,9 +15,9 @@ class InstagramLinkProcessor(url: String) : GenericLinkProcessor(url=url) {
     private val API_ENDPOINT = ""
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    suspend fun processLink(context: Context, filename: String, mime: String, channel: Channel<Int>) {
+    override suspend fun processLink(context: Context, url: String, filename: String, mime: String, channel: Channel<Int>): DownloadResult {
         Log.d("InstagramLinkProcessor", "Processing link: $url")
-        super._subprocessLink(context, filename, mime, channel)
+        return super.subprocessLink(context, url, filename, mime, channel)
     }
 
     override fun canProcess(url: String): Boolean = instagramRegex.matches(url)

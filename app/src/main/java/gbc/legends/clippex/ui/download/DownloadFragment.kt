@@ -1,5 +1,6 @@
 package gbc.legends.clippex.ui.download
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -10,16 +11,43 @@ import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import gbc.legends.clippex.R
+import gbc.legends.clippex.core.api.Failure
+import gbc.legends.clippex.core.api.MediaOption
+import gbc.legends.clippex.core.api.Success
 import gbc.legends.clippex.core.database.AppDatabase
 import gbc.legends.clippex.core.database.DownloadedFile
-import gbc.legends.clippex.core.links.GenericLinkProcessor
+import gbc.legends.clippex.core.links.InstagramLinkProcessor
 import gbc.legends.clippex.core.links.LinkProcessor
 import gbc.legends.clippex.core.links.LinkProcessorFactory
+import gbc.legends.clippex.core.links.TikTokLinkProcessor
+import gbc.legends.clippex.core.links.XLinkProcessor
+import gbc.legends.clippex.core.links.YouTubeLinkProcessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+
+fun Context.showQualityDialog(
+    options: List<MediaOption>,
+    onSelected: (MediaOption) -> MediaOption
+) {
+    val items = options.map { "${it.label}  (${it.info})" }.toTypedArray()
+
+    MaterialAlertDialogBuilder(this)
+        .setTitle("Select Quality")
+        .setItems(items) { dialog, which ->
+            val selected = options[which]
+            onSelected(selected)
+            dialog.dismiss()
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
+}
+
+
 
 class DownloadFragment : Fragment() {
     private lateinit var fileNameLabel: TextView
@@ -35,6 +63,22 @@ class DownloadFragment : Fragment() {
         // get the fileUrl from HomeFragment
         fileUrl = arguments?.getString("fileUrl")
     }
+
+
+    private fun makeDialog(options: List<MediaOption>) : MediaOption {
+        requireContext().showQualityDialog(options) {
+                selected ->
+            Log.d("Selector", selected.toString())
+            return@showQualityDialog selected
+        }
+
+        return options.first()
+    }
+
+    fun isGeneric(linkProcessor: LinkProcessor): Boolean {
+        return !(linkProcessor is YouTubeLinkProcessor || linkProcessor is InstagramLinkProcessor || linkProcessor is TikTokLinkProcessor || linkProcessor is XLinkProcessor)
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreateView(
@@ -54,34 +98,80 @@ class DownloadFragment : Fragment() {
         if (fileUrl == null) {
             fileNameLabel.text = "Invalid link"
             btnDownload.isEnabled = false
-        } else {
-            val name = fileUrl!!.substringAfterLast('/', "downloaded_file.txt")
-            val extension = name.substringAfterLast('.', "txt")
-            // show file info
-            fileNameLabel.text = "File Name: $name"
-            fileTypeLabel.text = "File Type: $extension"
-            renameInput.setText(name)
         }
 
-        btnDownload.setOnClickListener {
-            startDownload()
+        var fileName: String
+        var mimeType: String
+        var urlString: String = fileUrl ?: return null
+        Log.d("DownloadFragment", "URL: $urlString")
+
+        val linkProcessor = LinkProcessorFactory.getProcessor(urlString)
+        Log.d("DownloadFragment", "Link processor: $linkProcessor")
+
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            var fileName: String
+            var mimeType: String
+            var downloadUrl: String = urlString
+
+            if (isGeneric(linkProcessor)) {
+
+                fileName = linkProcessor.getFilename(renameInput.text.toString(), urlString)
+                mimeType = linkProcessor.getMime(fileName)
+
+                val name = urlString.substringAfterLast('/', "downloaded_file.txt")
+                val extension = name.substringAfterLast('.', "txt")
+
+                fileNameLabel.text = "File Name: $name"
+                fileTypeLabel.text = "File Type: $extension"
+                renameInput.setText(name)
+
+            } else {
+                Log.d("DownloadFragment", "Requesting to clippex api: $urlString")
+                val response = when (val req = linkProcessor.requestToClippexApi(requireContext(), urlString)) {
+                    is Failure -> throw Exception(req.errorMessage, req.exception)
+                    is Success -> req.response
+                }
+                Log.d("DownloadFragment", "Response: $response")
+
+
+                val options = response.result.medias.map {
+                    it.toMediaOption(response.result.author, response.result.title)
+                }
+
+                val media = if (options.size == 1) {
+                    options[0]
+                } else {
+                    makeDialog(options)
+                }
+
+                fileName = media.fileName
+                mimeType = linkProcessor.getMime(fileName)
+                downloadUrl = media.url
+
+                val extension = fileName.substringAfterLast('.', "txt")
+
+                fileNameLabel.text = "File Name: $fileName"
+                fileTypeLabel.text = "File Type: $extension"
+                renameInput.setText(fileName)
+            }
+
+            btnDownload.setOnClickListener {
+                startDownload(downloadUrl, fileName, mimeType)
+            }
         }
+
         return view
     }
 
-    private fun startDownload() {
-        val urlString = fileUrl ?: return
+
+    private fun startDownload(urlString: String, fileName: String, mimeType: String) {
         val context = requireContext()
 
         val linkProcessor: LinkProcessor = LinkProcessorFactory.getProcessor(urlString);
         Log.d("DownloadFragment", "Link processor: $linkProcessor")
 
-
         val progressChannel = Channel<Int>(capacity = Channel.CONFLATED)
-
-        val fileName = linkProcessor.getFilename(renameInput.text.toString(), urlString)
-
-        val mimeType = linkProcessor.getMime(fileName)
 
 
         progressBar.progress = 0
@@ -96,7 +186,7 @@ class DownloadFragment : Fragment() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val resultUri = linkProcessor._subprocessLink(context, fileName, mimeType, progressChannel)
+                val resultUri = linkProcessor.processLink(context, urlString, fileName, mimeType, progressChannel)
                 Log.d("DownloadFragment", "Download result: $resultUri")
 
 

@@ -4,13 +4,13 @@ object LinkProcessorFactory {
 
     fun getProcessor(url: String): LinkProcessor {
         val processors = listOf(
-            YouTubeLinkProcessor(url = url),
-            InstagramLinkProcessor(url=url),
-            TikTokLinkProcessor(url=url),
-            XLinkProcessor(url=url)
+            YouTubeLinkProcessor(),
+            InstagramLinkProcessor(),
+            TikTokLinkProcessor(),
+            XLinkProcessor()
         )
 
-        val genericProcessor = GenericLinkProcessor(url=url)
+        val genericProcessor = GenericLinkProcessor()
         return processors.firstOrNull { it.canProcess(url) } ?: genericProcessor
     }
 }

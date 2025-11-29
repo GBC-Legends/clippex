@@ -5,15 +5,21 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import androidx.annotation.RequiresApi
+import gbc.legends.clippex.core.api.ApiRequestResult
+import gbc.legends.clippex.core.api.platforms.ApiResponse
 import kotlinx.coroutines.channels.Channel
+import kotlinx.serialization.json.Json
 import java.io.BufferedInputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
 
-open class GenericLinkProcessor(open val url: String) : LinkProcessor {
+open class GenericLinkProcessor() : LinkProcessor {
+    protected val json = Json { ignoreUnknownKeys = true }
+    protected val apiUrl = "https://api.clippex.tech/get_video"
 
     override fun canProcess(url: String): Boolean = true
 
@@ -147,9 +153,9 @@ open class GenericLinkProcessor(open val url: String) : LinkProcessor {
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    override suspend fun _subprocessLink(context: Context, filename: String, mime: String, channel: Channel<Int>): DownloadResult {
+    suspend fun subprocessLink(context: Context, url: String, filename: String, mime: String, channel: Channel<Int>): DownloadResult {
         try {
-            val url = URL(this.url)
+            val url = URL(url)
             val connection = url.openConnection() as HttpURLConnection
             connection.connect()
 
@@ -194,5 +200,23 @@ open class GenericLinkProcessor(open val url: String) : LinkProcessor {
             e.printStackTrace()
             return Failure("Download processing failed: ${e.message}", e)
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    override suspend fun processLink(context: Context, url: String, filename: String, mime: String, channel: Channel<Int>): DownloadResult {
+        Log.d("GenericLinkProcessor", "Processing link: $url")
+        return subprocessLink(context, url, filename, mime, channel)
+    }
+
+    override fun parseApiResponse(input: String): ApiResponse {
+        return json.decodeFromString(ApiResponse.serializer(), input)
+    }
+
+    override suspend fun requestToClippexApi(
+        context: Context,
+        url: String
+    ): ApiRequestResult {
+        val exception = Exception()
+        return gbc.legends.clippex.core.api.Failure("Error using classes", exception)
     }
 }

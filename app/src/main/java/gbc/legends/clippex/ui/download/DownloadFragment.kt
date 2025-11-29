@@ -157,7 +157,7 @@ class DownloadFragment : Fragment() {
             }
 
             btnDownload.setOnClickListener {
-                startDownload(downloadUrl, fileName, mimeType)
+                startDownload(downloadUrl, renameInput.text.toString(), mimeType)
             }
         }
 

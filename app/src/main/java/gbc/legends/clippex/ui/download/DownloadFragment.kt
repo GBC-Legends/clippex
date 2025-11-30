@@ -30,28 +30,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.delay
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 
-
-fun Context.showQualityDialog(
-    options: List<MediaOption>,
-    onSelected: (MediaOption) -> MediaOption
-) {
-    val items = options.map { "${it.label}  (${it.info})" }.toTypedArray()
+suspend fun Context.showQualityDialogAsync(
+    options: List<MediaOption>
+): MediaOption = kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+    val items = options.map { "${it.label} (${it.info})" }.toTypedArray()
 
     MaterialAlertDialogBuilder(this)
         .setTitle("Select Quality")
         .setItems(items) { dialog, which ->
-            val selected = options[which]
-            onSelected(selected)
+            cont.resume(options[which])
             dialog.dismiss()
         }
-        .setNegativeButton("Cancel", null)
+        .setNegativeButton("Cancel") { dialog, _ ->
+            cont.cancel()
+            dialog.dismiss()
+        }
         .show()
 }
-
-
 
 class DownloadFragment : Fragment() {
     private lateinit var fileNameLabel: TextView
@@ -68,16 +66,6 @@ class DownloadFragment : Fragment() {
         fileUrl = arguments?.getString("fileUrl")
     }
 
-
-    private fun makeDialog(options: List<MediaOption>) : MediaOption {
-        requireContext().showQualityDialog(options) {
-                selected ->
-            Log.d("Selector", selected.toString())
-            return@showQualityDialog selected
-        }
-
-        return options.first()
-    }
 
     fun isGeneric(linkProcessor: LinkProcessor): Boolean {
         return !(linkProcessor is YouTubeLinkProcessor || linkProcessor is InstagramLinkProcessor || linkProcessor is TikTokLinkProcessor || linkProcessor is XLinkProcessor)
@@ -157,7 +145,7 @@ class DownloadFragment : Fragment() {
                 val media = if (options.size == 1) {
                     options[0]
                 } else {
-                    makeDialog(options)
+                    requireContext().showQualityDialogAsync(options)
                 }
 
                 fileName = media.fileName

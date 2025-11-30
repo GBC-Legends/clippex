@@ -34,15 +34,19 @@
 
     <EditText
         android:id="@+id/linkInput"
-        android:layout_width="382dp"
-        android:layout_height="46dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:padding="10dp"
         android:backgroundTint="@color/blue"
         android:textCursorDrawable="@drawable/custom_cursor"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.448"
+        android:inputType="textMultiLine|textUri"
+        android:scrollHorizontally="false"
+        android:ellipsize="none"
+        android:maxLines="5"
+        android:overScrollMode="always"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/linkLabel" />
 
     <TextView

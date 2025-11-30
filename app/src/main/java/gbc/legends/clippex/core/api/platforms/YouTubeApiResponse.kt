@@ -42,16 +42,8 @@ data class YouTubeMediaItem(
 ) : MediaItem {
 
     override fun toMediaOption(author: String, title: String): MediaOption {
-        val safeExt = extension ?: ext ?: "mp4"
-        val fileName = sanitizeFileName("$author - $title") + ".$safeExt"
-        val labelName = quality ?: label ?: type
-
-        return MediaOption(
-            label = labelName,
-            info = "$type $safeExt ${height ?: ""}p",
-            url = this.url,
-            fileName = fileName
-        )
+        val fileName = sanitizeFileName("$author - $title") + ".$extension"
+        return MediaOption(label=this.quality ?: "MAX", info="$type $extension", url=this.url, fileName=fileName)
     }
 }
 

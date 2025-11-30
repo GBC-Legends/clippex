@@ -23,8 +23,6 @@ class YouTubeLinkProcessor : GenericLinkProcessor() {
     )
 
     override fun canProcess(url: String): Boolean = youTubeRegex.matches(url)
-
-    // This is the MOST IMPORTANT override
     @RequiresApi(Build.VERSION_CODES.Q)
     override suspend fun requestToClippexApi(context: Context, url: String): ApiRequestResult {
         return withContext(Dispatchers.IO) {
@@ -38,7 +36,6 @@ class YouTubeLinkProcessor : GenericLinkProcessor() {
                 connection.readTimeout = 30000
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("Accept", "application/json")
-                // Optional: helps avoid bot detection
                 connection.setRequestProperty("User-Agent", "Clippex-App/1.0")
 
                 val body = """{"url": "$url"}"""
@@ -53,7 +50,6 @@ class YouTubeLinkProcessor : GenericLinkProcessor() {
                 val jsonResponse = connection.inputStream.bufferedReader().use { it.readText() }
                 Log.d("YouTubeProcessor", "Raw response: $jsonResponse")
 
-                // This will use your YouTubeApiResponse data class
                 val response = json.decodeFromString<YouTubeApiResponse>(jsonResponse)
 
                 if (response.result.error) {
